@@ -4,14 +4,20 @@ This is a Julia v.0.6 implementation for the Invariant Causal Prediction algorit
 
 See also this [R package](https://cran.r-project.org/package=InvariantCausalPrediction).
 
-### Dependencies
+#### Dependencies
 
-[DataStructures.jl](https://github.com/JuliaCollections/DataStructures.jl), [StatsBase.jl](https://github.com/JuliaStats/StatsBase.jl), [GLMNet.jl](https://github.com/JuliaStats/GLMNet.jl) (for lasso screening), 
+[DataStructures.jl](https://github.com/JuliaCollections/DataStructures.jl), [StatsBase.jl](https://github.com/JuliaStats/StatsBase.jl), [GLMNet.jl](https://github.com/JuliaStats/GLMNet.jl) (for lasso screening).
+
+### Quick Start
+
+Generate a simple Gaussian structure equation model with random graph. 
+
+
 
 ### Features
 
 - High performance implementation in Julia v.0.6
-- Faster search: 
+- Faster search: w
   - skipping testing supersets of A if A is accepted ( under  `selection_only` mode)
   - Priority queue to prioritize testing sets likely to be invariant
 
