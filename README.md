@@ -8,6 +8,22 @@ See also this [R package](https://cran.r-project.org/package=InvariantCausalPred
 
 [DataStructures.jl](https://github.com/JuliaCollections/DataStructures.jl), [StatsBase.jl](https://github.com/JuliaStats/StatsBase.jl), [GLMNet.jl](https://github.com/JuliaStats/GLMNet.jl) (for lasso screening).
 
+### Installation
+
+Install the package via
+
+```Julia
+Pkg.clone("https://github.com/richardkwo/InvariantCausal.git")
+```
+
+#### Test
+
+Run all tests with 
+
+```julia
+Pkg.test("InvariantCausal)
+```
+
 ### Quick Start
 
 Generate a simple Gaussian structure equation model with random graph. 
