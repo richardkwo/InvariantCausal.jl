@@ -1,5 +1,6 @@
 import Base.cov
 using StatsBase: sample
+using UnicodePlots.spy
 
 abstract type SEM end
 
@@ -17,7 +18,8 @@ end
 
 function Base.show(io::IO, sem::GaussianSEM)
     print(io, "Gaussian SEM with $(sem.p) variables:\n")
-    print(io, "B = $(sem.B)\n")
+    print(io, "B = \n")
+    print(io, spy(sem.B))
     print(io, "σ² = $(sem.err_var)")
 end
 
