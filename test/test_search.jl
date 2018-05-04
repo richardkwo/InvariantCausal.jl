@@ -1,7 +1,7 @@
 using Base.Test
 using StatsBase.sample
 
-X = readdlm("X1.dat")
+X = readdlm(joinpath(@__DIR__, "..", "test", "X1.dat"))
 env = repeat(2:20, inner=300)
 env = vcat(repeat([1], inner=200), env)
 S = 1:size(X,2)
