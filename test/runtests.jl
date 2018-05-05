@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-using GLM
+using GLMNet
 using InvariantCausal
 using Base.Test
 
