@@ -17,9 +17,9 @@ using Base.Test
 end
 
 @time @testset "chow test" begin
-    m = 300
+    m = 100
     p_values = map(x -> (
-        n = 500;
+        n = 300;
         p = 7;
         X1 = randn(2 * n, p);
         X2 = randn(n, p);
@@ -27,6 +27,6 @@ end
         y1 = X1 * beta + 1 + randn(2 * n);
         y2 = X2 * beta + 1 + randn(n);
         two_sample_chow(X1, X2, y1, y2)), 1:m)
-    @test abs(mean(p_values .< 0.05) - 0.05) < sqrt(0.5 / m)
+    @test abs(mean(p_values .< 0.05) - 0.05) < 2 * sqrt(0.05 * 0.95 / m)
 end
 
