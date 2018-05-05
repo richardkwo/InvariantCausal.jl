@@ -8,5 +8,10 @@ module InvariantCausal
     include("conditionalIndepTests.jl")
     include("causalSearch.jl")
     include("SEM.jl")
-    include("screening.jl")    
+    include("screening.jl")
+
+    function _test_full()
+        include(joinpath(@__DIR__, "..", "test", "test_full.jl"))
+    end
+
 end

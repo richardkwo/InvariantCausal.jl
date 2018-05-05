@@ -48,7 +48,7 @@ end
 
 """
     causalSearch(X, y, env, [ S=1:size(X,2) ];
-                 α=0.01, method="chow", p_max=8, verbose=true, selection_only=false, n_max_for_exact=5000)
+                 α=0.01, method="chow", p_max=8, verbose=true, selection_only=false, n_max_for_exact=5000, max_num_true_causes=length(S))
 
 Searching over subsets in `X[,S]` for direct causes of `y`
 

@@ -18,10 +18,11 @@ Install the package via typing the following in Julia REPL.
 Pkg.clone("https://github.com/richardkwo/InvariantCausal.git")
 ```
 
-Run all the tests with the following.
+Use the following to run a full test.
 
 ```julia
-Pkg.test("InvariantCausal")
+using InvariantCausal
+InvariantCausal._test_full()
 ```
 
 ### Quick Start
