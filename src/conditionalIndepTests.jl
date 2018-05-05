@@ -49,7 +49,8 @@ Return: `rej`, `p_value`, `conf_intervals`
 """
 function conditional_indep_test_chow(X::Matrix{Float64}, y::Vector{Float64}, env::Vector{Int64}, n_env::Int64;
                                      α=0.01, n_max_for_exact=5000)
-    p_values = zeros(n_env)
+    @assert n_env >= 1
+    p_values = ones(n_env)
     p = size(X, 2)
     n_all = size(X, 1)
     for i in 1:n_env
@@ -62,10 +63,8 @@ function conditional_indep_test_chow(X::Matrix{Float64}, y::Vector{Float64}, env
         end
         p_values[i] = two_sample_chow(X[idx_out, :], X[idx_in, :], y[idx_out], y[idx_in];
                                       α=α, add_intercept=true)
-        if p_values[i] < min(1e-6, α / n_env)
-            # early stop to save time
-            p_values[(i+1):end] = p_values[i]
-            break
+        if p_values[i] < min(α / n_env)
+            break   # early termination
         end
     end
     # Bonferroni correction
@@ -110,8 +109,13 @@ function two_sample_chow(X1::Matrix{Float64}, X2::Matrix{Float64},
     end
     p = size(X1, 2)
     # fit on X1
-    # _fit = glm(X1, y1, Normal(), IdentityLink())
-    β = (X1' * X1) \ (X1' * y1)
+    β = zeros(p)
+    try
+        β = (X1' * X1) \ (X1' * y1)
+    catch _err
+        print_with_color(:light_red, "encountered $_err in least square for Chow's test\n")
+        return 0.
+    end
     res2 = y2 - X2 * β
     Σ_res = diagm(ones(n2)) + X2 * ((X1' * X1) \ X2')   # inv(A) * B = A \ B
     σ2 = var(y1 - X1 * β) * (n1 - 1) / (n1 - p)  # should use dof = (n - p) as denominator
