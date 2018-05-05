@@ -1,5 +1,7 @@
 ## Causal Inference with Invariant Prediction
 
+[![Build Status](https://travis-ci.org/richardkwo/InvariantCausal.svg?branch=master)](https://travis-ci.org/richardkwo/InvariantCausal)
+
 This is a Julia v.0.6 implementation for the Invariant Causal Prediction algorithm of [Peters, Bühlmann and Meinshausen](https://doi.org/10.1111/rssb.12167). The method uncovers direct causes of a target variable from datasets under different environments (e.g., interventions or experimental settings). 
 
 See also this [R package](https://cran.r-project.org/package=InvariantCausalPrediction).
