@@ -24,7 +24,7 @@ Pkg.test("InvariantCausal")
 
 ### Quick Start
 
-Generate a simple Gaussian structure equation model with random graph with 21 variables and average degree 3. 
+Generate a simple [Gaussian structure equation model](https://en.wikipedia.org/wiki/Structural_equation_modeling?oldformat=true) with random graph with 21 variables and average degree 3. 
 
 ```julia
 julia> using InvariantCausal
@@ -81,10 +81,7 @@ S = [2]                                     : p-value = 0.1376 [*] ⋂ = [2]
 S = [20]                                    : p-value = 0.0000 [ ] ⋂ = [2]
 S = [16]                                    : p-value = 0.0000 [ ] ⋂ = [2]
 S = [15]                                    : p-value = 0.0000 [ ] ⋂ = [2]
-									...
-S = [5, 15, 6]                              : p-value = 0.0000 [ ] ⋂ = [2]
-S = [2, 15, 6]                              : p-value = 0.1888 [*] ⋂ = [2]
-S = [15, 6, 20]                             : p-value = 0.0000 [ ] ⋂ = [2]
+                                     ...
 S = [2, 5, 6]                               : p-value = 0.3557 [*] ⋂ = [2]
 S = [5, 6, 20]                              : p-value = 0.1879 [*] ⋂ = Int64[]
 
@@ -139,21 +136,7 @@ S = [2]                                     : p-value = 0.1714 [*] ⋂ = [2]
 S = [5, 1]                                  : p-value = 0.0000 [ ] ⋂ = [2]
 S = [2, 5]                                  : p-value = 0.2211 [*] ⋂ = [2]
 S = [5, 20]                                 : p-value = 0.0000 [ ] ⋂ = [2]
-S = [5, 6]                                  : p-value = 0.0000 [ ] ⋂ = [2]
-S = [13, 5]                                 : p-value = 0.0000 [ ] ⋂ = [2]
-S = [5, 8]                                  : p-value = 0.0000 [ ] ⋂ = [2]
-S = [5, 15]                                 : p-value = 0.0000 [ ] ⋂ = [2]
-S = [13, 20]                                : p-value = 0.0003 [ ] ⋂ = [2]
-S = [6, 20]                                 : p-value = 0.0000 [ ] ⋂ = [2]
-S = [15, 20]                                : p-value = 0.0028 [ ] ⋂ = [2]
-S = [2, 20]                                 : p-value = 0.1699 [*] ⋂ = [2]
-S = [1, 20]                                 : p-value = 0.0000 [ ] ⋂ = [2]
-S = [8, 20]                                 : p-value = 0.0000 [ ] ⋂ = [2]
-S = [15, 1]                                 : p-value = 0.0002 [ ] ⋂ = [2]
-S = [6, 1]                                  : p-value = 0.0000 [ ] ⋂ = [2]
-S = [2, 1]                                  : p-value = 0.2338 [*] ⋂ = [2]
-S = [8, 1]                                  : p-value = 0.0000 [ ] ⋂ = [2]
-								...
+                                      ...
 S = [1, 13, 2, 5, 8, 15, 6]                 : p-value = 0.4380 [*] ⋂ = [2]
 S = [20, 6, 13, 2, 5, 8, 15, 1]             : p-value = 0.6916 [*] ⋂ = [2]
 
