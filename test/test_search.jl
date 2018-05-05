@@ -2,15 +2,15 @@ using Base.Test
 using StatsBase.sample
 
 X = readdlm(joinpath(@__DIR__, "..", "test", "X1.dat"))
-env = repeat(2:20, inner=300)
-env = vcat(repeat([1], inner=200), env)
+env = Vector{Int}(X[:,1])
+X = X[:,2:end]
 S = 1:size(X,2)
 
 @time @testset "causal search" begin
     result = map(i -> causalSearch(X, X[:, i], env, setdiff(S,i) , α=0.01), S)
     @test result[2].S == [5]
     @test result[3].S == [5]
-    @test result[7].S == [4]
+    @test result[7].S == [4] || result[7].S == []
     for i in [1, 4, 5, 6]
         @test result[i].model_reject == true
     end
@@ -20,7 +20,7 @@ end
     result = map(i -> causalSearch(X, X[:, i], env, setdiff(S,i), α=0.01, selection_only=true), S)
     @test result[2].S == [5]
     @test result[3].S == [5]
-    @test result[7].S == [4]
+    @test result[7].S == [4] || result[7].S == []
     for i in [1, 4, 5, 6]
         @test result[i].model_reject == true
     end
@@ -30,7 +30,7 @@ end
     result = map(i -> causalSearch(X, X[:, i], env, setdiff(S,i), α=0.01, max_num_true_causes=3), S)
     @test result[2].S == [5]
     @test result[3].S == [5]
-    @test result[7].S == [4]
+    @test result[7].S == [4] || result[7].S == []
     for i in [1, 4, 5, 6]
         @test result[i].model_reject == true
     end
@@ -40,7 +40,7 @@ end
     result = map(i -> causalSearch(X, X[:, i], env, setdiff(S,i), α=0.01, n_max_for_exact=100), S)
     @test result[2].S == [5]
     @test result[3].S == [5]
-    @test result[7].S == [4]
+    @test result[7].S == [4] || result[7].S == []
     for i in [1, 4, 5, 6]
         @test result[i].model_reject == true
     end
