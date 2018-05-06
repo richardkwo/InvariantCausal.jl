@@ -160,6 +160,8 @@ variable   	 1.0 % 		 99.0 %
   - When sample size exceeds `n_max_for_exact`, sub-sampling is used for Chow test
 - `testConditionalIndep(X, y, S, env, n_env:; α=0.01, method="chow")` and `two_sample_chow(X1, X2, y1, y2)` for testing conditional invariance.
 - SEM utilities: `random_gaussian_SEM`, `random_noise_intervened_SEM`, `simulate`, `causes` and `cov` for generating random SEM (Erdos-Renyi), simulation and interventions.
+- Variables screening:
+  - Lasso (with `glmnet`): `screen_lasso(X, y, pmax)`
 
 ###  Features
 
@@ -173,6 +175,8 @@ variable   	 1.0 % 		 99.0 %
 - ~~Confidence intervals~~
 - ~~Variable screening~~
   - ~~glmnet~~
+  - HOLP
+  - Marginal
 - ~~Subsampling for large n in Chow's test~~
 - Nonparametric two-sample tests
 - Hidden variable case
