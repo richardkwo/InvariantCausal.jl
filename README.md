@@ -27,7 +27,7 @@ InvariantCausal._test_full()
 
 ### Quick Start
 
-Generate a simple [Gaussian structure equation model](https://en.wikipedia.org/wiki/Structural_equation_modeling?oldformat=true) with random graph with 21 variables and average degree 3. 
+Generate a simple [Gaussian structure equation model](https://en.wikipedia.org/wiki/Structural_equation_modeling?oldformat=true) (SEM) with random graph with 21 variables and average degree 3. Note that we assume the SEM is acyclic. The model can be represented as `X = B X + ϵ` with zeros on the diagonals of B (no self-loop). `ϵ` is a vector of independent Gaussian errors. For a variable `i`, variables `j` with coefficients `B[i,j]` non-zero are called the direct causes of `i`. We assume `B` is sparse, and its sparsity pattern is visualized with [UnicodePlots.jl](https://github.com/Evizero/UnicodePlots.jl).
 
 ```julia
 julia> using InvariantCausal
@@ -37,14 +37,14 @@ julia> sem_obs = random_gaussian_SEM(21, 3)
 Gaussian SEM with 21 variables:
 B =
       Sparsity Pattern
-      ┌───────────┐
+      ┌─────────────┐
     1 │⠀⠀⠂⠄⠀⠔⠀⠀⠂⠂⡆│ > 0
       │⢀⢠⠈⡀⠠⠠⣀⠀⠀⠅⠀│ < 0
       │⠀⠐⠉⠀⠈⠠⠘⠀⠀⠆⠉│
       │⠀⠐⢠⠀⠀⡀⠐⠀⢂⠀⡂│
       │⠀⠠⢐⠀⠉⠵⠠⠁⠄⠈⠂│
    21 │⠈⠄⠸⠀⠀⠈⠀⠀⠉⠀⠁│
-      └───────────┘
+      └─────────────┘
       1          21
         nz = 63
 σ² = [1.3996, 1.37975, 1.87259, 1.15587, 0.631316, 1.38616, 1.45151, 1.73923, 1.55834, 1.11023, 1.24599, 0.958217, 0.834141, 1.94525, 1.4888, 1.53593, 1.69174, 0.649617, 1.121, 1.14597, 0.692029]
@@ -101,14 +101,14 @@ julia> sem_noise, variables_intervened = random_noise_intervened_SEM(sem_obs, p_
 (Gaussian SEM with 21 variables:
 B =
       Sparsity Pattern
-      ┌───────────┐
+      ┌─────────────┐
     1 │⠀⠀⠂⠄⠀⠔⠀⠀⠂⠂⡆│ > 0
       │⢀⢠⠈⡀⠠⠠⣀⠀⠀⠅⠀│ < 0
       │⠀⠐⠉⠀⠈⠠⠘⠀⠀⠆⠉│
       │⠀⠐⢠⠀⠀⡀⠐⠀⢂⠀⡂│
       │⠀⠠⢐⠀⠉⠵⠠⠁⠄⠈⠂│
    21 │⠈⠄⠸⠀⠀⠈⠀⠀⠉⠀⠁│
-      └───────────┘
+      └─────────────┘
       1          21
         nz = 63
 σ² = [1.3996, 1.20882, 1.87259, 1.15587, 0.631316, 1.38616, 1.45151, 1.73923, 2.55396, 1.11023, 1.24599, 0.958217, 0.506628, 1.94525, 2.16212, 1.53593, 1.69174, 0.649617, 1.121, 2.19366, 0.692029], [9, 15, 13, 2, 20])
