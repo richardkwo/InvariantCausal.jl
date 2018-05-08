@@ -15,14 +15,14 @@ See also this [R package](https://cran.r-project.org/package=InvariantCausalPred
 Install the package via typing the following in Julia REPL.
 
 ```Julia
-Pkg.clone("https://github.com/richardkwo/InvariantCausal.git")
+julia> Pkg.clone("https://github.com/richardkwo/InvariantCausal.git")
 ```
 
 Use the following to run a full test.
 
 ```julia
-using InvariantCausal
-InvariantCausal._test_full()
+julia> using InvariantCausal
+julia> InvariantCausal._test_full()
 ```
 
 ### Quick Start
@@ -52,7 +52,7 @@ B =
 
 Suppose we want to infer the direct causes for the last variables, which are
 
-```
+```julia
 julia> causes(sem_obs, 21)
 2-element Array{Int64,1}:
  2
@@ -68,7 +68,7 @@ julia> X1 = simulate(sem_obs, 1000)
 Then, we simulate from environment 2 by performing do-intervention on variables 3, 4, 5, 6. Here we set them to fixed random values.
 
 ```julia
-X2 = simulate(sem_obs, [3,4,5,6], randn(4), 1000)
+julia> X2 = simulate(sem_obs, [3,4,5,6], randn(4), 1000)
 ```
 
 We run the algorithm on environments 1 and 2.
