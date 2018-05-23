@@ -2,7 +2,7 @@ using Distributions: cdf, FDist, TDist, Chisq, Bernoulli
 using StatsBase: sample
 using DataFrames: DataFrame
 using StatsModels: @formula, Formula
-using GLM: glm, loglikelihood, coef, confint
+using GLM: glm, loglikelihood, coef, confint, predict
 
 """
     conditional_inv_test_chow(X, y, env, n_env; α=0.01)
@@ -102,7 +102,7 @@ function two_sample_chow(X1::Matrix{Float64}, X2::Matrix{Float64},
 end
 
 """
-    conditional_inv_test_logistic_LR(df, :target, S, env, n_env; α=0.01, add_intercept=true)
+    conditional_inv_test_logistic(df, :target, S, env, n_env; α=0.01, add_intercept=true, method="logistic-LR")
 
 Test `H0: y | X` is invariant under environments by combining leave-one-out likelihood ratio test.
 The model is logistic regression specified by `fmla`.
@@ -114,13 +114,16 @@ The model is logistic regression specified by `fmla`.
 * `n_env`:             number of environments
 * `α`:                 significance level
 * `add_intercept`:     add `+ 1` or not in formula
+* `method`:            
+    + `logistic-LR`: likelihood ratio test
+    + `logistic-t`:  t test
 
 Return: `rej`, `p_value`, `conf_intervals`
 * `rej`: false if invariant
 * `conf_intervals`: p x 2 matrix, cols = (min, max)
 """
-function conditional_inv_test_logistic_LR(df::DataFrame, target::Symbol, S::Vector{Symbol},
-                                            env::Vector{Int64}, n_env::Int64; α=0.01, add_intercept=true)
+function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{Symbol},
+                                          env::Vector{Int64}, n_env::Int64; α=0.01, add_intercept=true, method="logistic-LR")
     @assert n_env >= 1
     @assert !(target in S)
     p = length(S) + add_intercept    
@@ -132,12 +135,32 @@ function conditional_inv_test_logistic_LR(df::DataFrame, target::Symbol, S::Vect
     # iterate over environments
     for i in 1:n_env
         @assert sum(env.==i) > 0
-        # fit separately
-        fit1 = glm(fmla, df[env.==i, :], Bernoulli())
-        fit2 = glm(fmla, df[env.!=i, :], Bernoulli())
-        # log likelihood ratio 2 log (p(bigger model) / p(smaller model)) 
-        lr = 2 * (loglikelihood(fit1) + loglikelihood(fit2) - loglikelihood(fit0))
-        p_values[i] = 1 - cdf(Chisq(p), lr)
+        if method == "logistic-LR"
+            # fit separately
+            fit1 = glm(fmla, df[env.==i, :], Bernoulli())
+            fit2 = glm(fmla, df[env.!=i, :], Bernoulli())
+            # log likelihood ratio = 2 log (p(bigger model) / p(smaller model)) 
+            lr = 2 * (loglikelihood(fit1) + loglikelihood(fit2) - loglikelihood(fit0))
+            p_values[i] = 1 - cdf(Chisq(p), lr)
+        elseif method == "logistic-t"
+            # predict and test equal mean of residuals
+            if p > 1
+                res = df[target] - predict(fit0, df)
+            else
+                res = df[target] - predict(fit0)
+            end
+            res1 = res[env.==i]
+            res2 = res[env.!=i]
+            n1 = length(res1)
+            n2 = length(res2)
+            v1 = var(res1, corrected=false)
+            v2 = var(res2, corrected=false)
+            t = (mean(res1) - mean(res2)) / sqrt(v1 / n1 + v2 / n2)
+            ν = (v1 / n1 + v2 / n2)^2 / (v1^2 / (n1^2 * (n1 - 1)) + v2^2 / (n2^2 * (n2 - 1)))
+            p_values[i] = 2 * (1 - cdf(TDist(ν), abs(t)))
+        else
+            error("method undefined")
+        end
         if p_values[i] < min(α / n_env)
             break   # early termination
         end
@@ -175,12 +198,12 @@ Generate formula of `y ~ .` type for `df`, where `y` is specified by `target`.
 """
 function get_formula(df::DataFrame, target::Symbol, S=setdiff(names(df), [target]); add_intercept=true)
     if length(S)==0
-        return @formula($target ~ 1)
+        return @eval @formula($target ~ 1)
     end
     if add_intercept
-        return @formula($target ~ +(1, $(S...)))
+        return @eval @formula($target ~ +(1, $(S...)))
     else
-        return @formula($target ~ +($(S...), 0))
+        return @eval @formula($target ~ +($(S...), 0))
     end
 end
 
