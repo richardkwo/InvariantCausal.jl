@@ -9,10 +9,10 @@ using Base.Test
     X = randn(n * n_env, p)
     beta = randn(p)
     y = X * beta - 1. + randn(n * n_env)
-    rej, p_value, conf_intervals = InvariantCausal.conditional_indep_test_chow(X, y, env, n_env)
+    rej, p_value, conf_intervals = InvariantCausal.conditional_inv_test_chow(X, y, env, n_env)
     @test rej == false
     y[1:n] = X[1:n, :] * (beta / 2) - 1. + randn(n)  # change environment 1
-    rej, p_value, conf_intervals = InvariantCausal.conditional_indep_test_chow(X, y, env, n_env)
+    rej, p_value, conf_intervals = InvariantCausal.conditional_inv_test_chow(X, y, env, n_env)
     @test rej == true
 end
 

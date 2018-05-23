@@ -1,11 +1,12 @@
 using DataStructures: PriorityQueue, enqueue!, dequeue_pair!
+using DataFrames: DataFrame
 
 struct CausalSearchResult
-    S                               ::Vector{Int64}
+    S                               ::Union{Vector{Int64}, Vector{Symbol}}
     confint                         ::Matrix{Float64}
     α                               ::Float64
     p                               ::Int64
-    variables_considered            ::Vector{Int64}
+    variables_considered            ::Union{Vector{Int64}, Vector{Symbol}}
     selection_only                  ::Bool
     model_reject                    ::Bool
     function CausalSearchResult(S, confint, α, p, variables_considered; selection_only=false)
@@ -18,7 +19,7 @@ struct CausalSearchResult
         new(collect(S), confint, α, p, variables_considered, selection_only, false)
     end
     function CausalSearchResult(α, p, variables_considered; selection_only=true)
-        new([], Matrix{Float64}(0, 2), α, p, variables_considered, selection_only, true)
+        new(Vector{Int64}(), Matrix{Float64}(0, 2), α, p, variables_considered, selection_only, true)
     end
 end
 
@@ -52,29 +53,46 @@ end
 
 Searching over subsets in `X[,S]` for direct causes of `y`
 
-*`X`:                 n x p matrix 
-*`y`:                 vector of n
-*`env`:               environment indicators (rows of X): 1, 2, ...
-*`S`:                 set of variables (col indices of X) to search, can be a Vector or a Set
-*`α`:                 significance level (e.g. 0.01)
-*`p_max`:             maximum number of variables to consider. 
-                      will use lasso (glmnet) to screen out `p_max` number of variables if `p_max < |S|`
-*`method`:            "chow" for combined two-sample chow test
-*`verbose`:           if true, will print each subset tested
-*`selection_only`:    if true, will prune supersets of an invariant set;
-                      but not able to produce valid confidence intervals
-*`n_max_for_exact`:   maximum number of observations of an environment for exact testing; 
-                     otherwise a subsample of n_max rows will be used
-*`max_num_true_causes`: maximum number of true causal variables; if specified to smaller than `|S|`, 
+# Arguments
+* `X`:                 either an n x p matrix or a `DataFrames.DataFrame`
+* `y`:                 vector of n
+* `env`:               environment indicators (rows of X): 1, 2, ...
+* `S`:                 set of variables (col indices of X) to search, can be a Vector or a Set
+* `α`:                 significance level (e.g. 0.01)
+* `p_max`:             maximum number of variables to consider. 
+                       will use lasso (glmnet) to screen out `p_max` number of variables if `p_max < |S|`
+* `method`:            
+     + `"chow"` for Gaussian linear regression, combined two-sample chow test
+     + `"LR-logistic"` for logistic regression (`y` consists of 0 and 1), combined likelihood-ratio test
+* `verbose`:           if true, will print each subset tested
+* `selection_only`:    if true, will prune supersets of an invariant set;
+                       but not able to produce valid confidence intervals
+* `n_max_for_exact`:   maximum number of observations of an environment for exact testing; 
+                      otherwise a subsample of n_max rows will be used
+* `max_num_true_causes`: maximum number of true causal variables; if specified to smaller than `|S|`, 
                         it will skip testing subsets with bigger size than `max_num_true_causes`.
 """
-function causalSearch(X::Matrix{Float64}, y::Vector{Float64}, env::Vector{Int64}, S=1:size(X,2);
+function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, env::Vector{Int64}, S=1:size(X,2);
                       α=0.01, method="chow", verbose=true, p_max=8,
                       selection_only=false, n_max_for_exact=5000, max_num_true_causes=length(S))
+    if method=="chow"
+        model = "linear"
+        if isa(X, DataFrame)
+            X = Matrix{Float64}(X)  # note: current linear fitting has to work with Matrix{Float64}
+        end
+    elseif method=="LR-logistic"
+        model = "logistic"
+        # combine into a DataFrame (note: GLM.jl has to work with DataFrame)
+        df = DataFrame(hcat(X, y))
+        target = names(df)[end]  # target is the last column
+    else
+        error("method must be one of: `logistic`, `LR-logistic`")
+    end
     S = collect(S)
     S = unique(S)
     p = size(X, 2)
     if p_max < length(S)
+        @assert model=="linear" "screening unsupported for GLM"
         q = length(S)
         S = S[screen_lasso(X[:, S], y, p_max)]
         print_with_color(:blue, "$p_max variables are screened out from $q variables with lasso: $S\n")
@@ -85,41 +103,57 @@ function causalSearch(X::Matrix{Float64}, y::Vector{Float64}, env::Vector{Int64}
     else
         max_num_true_causes = length(S)
     end
-    accepted_sets = Dict{Vector{Int64}, Float64}()
+    accepted_sets = Dict{Union{Vector{Symbol},Vector{Int64}}, Float64}()
+    n_tested_sets = 0
     running_intersection = S
     running_confintervals = zeros(p, 2)
     running_confintervals[:, 1] = Inf
     running_confintervals[:, 2] = -Inf
     n_env = maximum(env)
-    for i in 1:n_env
-        ni = sum(env.==i)
-        if ni > n_max_for_exact
-            print_with_color(:blue, @sprintf "environment %d has %d obs, subsample of %d is used\n" i ni n_max_for_exact)
+    if method=="chow"
+        for i in 1:n_env
+            ni = sum(env.==i)
+            if ni > n_max_for_exact
+                print_with_color(:blue, @sprintf "environment %d has %d obs, subsample of %d is used\n" i ni n_max_for_exact)
+            end
         end
     end
-    println(@sprintf "Causal invariance search across %d environments with at α=%s (|S| = %d, method = %s)\n" n_env α length(S) method)    
+    println(@sprintf "Causal invariance search across %d environments with at α=%s (|S| = %d, method = %s, model = %s)\n" n_env α length(S) method model)    
     max_num_true_causes < length(S) && print_with_color(:blue, "|S| is restricted to subsets with size ≦ $max_num_true_causes.\n")
     # priority queue: S -> -p.value (so sets with higher p-values are tested sooner)
-    candidate_sets = PriorityQueue{Set{Int64}, Float64}()
-    enqueue!(candidate_sets, Set{Int64}(), 0.)
+    candidate_sets = PriorityQueue{Union{Set{Int64}, Set{Symbol}}, Float64}()
+    enqueue!(candidate_sets, Set{typeof(S[1])}(), 0.)
     size_current_set = 0    
     while size_current_set <= max_num_true_causes
-        base_sets = Dict{Set{Int64}, Float64}()  # set -> (-p_value) 
+        base_sets = Dict{Union{Set{Int64}, Set{Symbol}}, Float64}()  # set -> (-p_value) 
         while !isempty(candidate_sets)
             # dequeue the set with highest p-value
             _S, neg_p_value = dequeue_pair!(candidate_sets)
             _S_vec = collect(_S)  # convert from Set{Int64} to Vector{Int64}
             # skip supersets under `selection_only`
-            selection_only && length(running_intersection)!=length(S) && issubset(running_intersection, _S) && continue  
-            rej, p_value, conf_intervals = testConditionalIndep(X, y, env, n_env, _S_vec, α=α, method=method)
+            selection_only && length(running_intersection)!=length(S) && issubset(running_intersection, _S) && continue
+            # test conditional invariance
+            n_tested_sets += 1
+            if method == "chow"
+                rej, p_value, conf_intervals = conditional_inv_test_chow(X[:,_S_vec], y, env, n_env, α=α, n_max_for_exact=n_max_for_exact)
+            elseif method == "LR-logistic"
+                # target is the last column of df
+                rej, p_value, conf_intervals = conditional_inv_test_logistic_LR(df, target, _S_vec, env, n_env, α=α, add_intercept=true)
+            end
             if !rej
                 # _S is an invariant set
                 accepted_sets[_S_vec] = p_value
                 # running ∩
                 running_intersection = intersect(running_intersection, _S_vec)
                 # running ∪
-                running_confintervals[_S_vec, 1] = min.(running_confintervals[_S_vec, 1], conf_intervals[:, 1])
-                running_confintervals[_S_vec, 2] = max.(running_confintervals[_S_vec, 2], conf_intervals[:, 2])
+                if isa(_S_vec, Vector{Int64})
+                    running_confintervals[_S_vec, 1] = min.(running_confintervals[_S_vec, 1], conf_intervals[:, 1])
+                    running_confintervals[_S_vec, 2] = max.(running_confintervals[_S_vec, 2], conf_intervals[:, 2])
+                else
+                    _idx_vec = [df.colindex[z] for z in _S_vec]
+                    running_confintervals[_idx_vec, 1] = min.(running_confintervals[_idx_vec, 1], conf_intervals[:, 1])
+                    running_confintervals[_idx_vec, 2] = max.(running_confintervals[_idx_vec, 2], conf_intervals[:, 2])
+                end
                 if verbose
                     println(@sprintf "S = %-40s: p-value = %-1.4f [%1s] ⋂ = %s" (isempty(_S_vec) ? "[]" : _S_vec) p_value (rej ? " " : "*") running_intersection)
                 end
@@ -149,6 +183,7 @@ function causalSearch(X::Matrix{Float64}, y::Vector{Float64}, env::Vector{Int64}
         end            
         size_current_set += 1
     end
+    println("\nTested $n_tested_sets sets: $(length(accepted_sets)) sets are accepted.")
     if isempty(accepted_sets)
         # model rejected
         return CausalSearchResult(α, p, variables_considered; selection_only = selection_only)
@@ -157,4 +192,17 @@ function causalSearch(X::Matrix{Float64}, y::Vector{Float64}, env::Vector{Int64}
     else
         return CausalSearchResult(running_intersection, running_confintervals, α, p, variables_considered; selection_only = false)
     end
+end
+
+function causalSearch(df::DataFrame, target::Union{Int64, Symbol}, env::Vector{Int64};
+                      α=0.01, method="chow", verbose=true, p_max=8,
+                      selection_only=false, n_max_for_exact=5000, max_num_true_causes=Inf)
+    if isa(target, Int64)
+        target = names(df)[target]
+    end
+    S = setdiff(names(df), [target])
+    X = df[:, S]
+    y = df[target]
+    causalSearch(X, y, env, S, α=α, method=method, verbose=verbose, p_max=p_max,
+                 selection_only=selection_only, n_max_for_exact=n_max_for_exact, max_num_true_causes=max_num_true_causes)
 end

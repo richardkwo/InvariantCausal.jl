@@ -2,10 +2,10 @@ __precompile__()
 
 module InvariantCausal
 
-    export testConditionalIndep, causalSearch, screen_lasso, two_sample_chow,
+    export causalSearch, screen_lasso, two_sample_chow, conditional_inv_test_chow, conditional_inv_test_logistic_LR,
            GaussianSEM, simulate, causes, cov, random_gaussian_SEM, random_noise_intervened_SEM
 
-    include("conditionalIndepTests.jl")
+    include("conditionalInvTests.jl")
     include("causalSearch.jl")
     include("SEM.jl")
     include("screening.jl")
