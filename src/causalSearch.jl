@@ -76,7 +76,7 @@ Searching over subsets in `X[,S]` for direct causes of `y`
 * `method`:            
      + `"chow"` for Gaussian linear regression, combined two-sample chow test
      + `"logistic-LR"` for logistic regression (`y` consists of 0 and 1), combined likelihood-ratio test
-     + `"logistic-BF"`  for logistic regression (`y` consists of 0 and 1), combined Bahadur-Fisher test
+     + `"logistic-SF"`  for logistic regression (`y` consists of 0 and 1), combined Sukhatme-Fisher test
 * `verbose`:           if true, will print each subset tested
 * `selection_only`:    if true, will prune supersets of an invariant set;
                        but not able to produce valid confidence intervals
@@ -97,7 +97,7 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
         if isa(X, DataFrame)
             X = Matrix{Float64}(X)  # note: current linear fitting has to work with Matrix{Float64}
         end
-    elseif method=="logistic-LR" || method=="logistic-BF"
+    elseif method=="logistic-LR" || method=="logistic-SF"
         model = "logistic"
         # combine into a DataFrame (note: GLM.jl has to work with DataFrame)
         @assert all((y.==1) .| (y.==0))
@@ -109,7 +109,7 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
         end
         target = names(df)[end]  # target is the last column
     else
-        error("method must be one of: `chow`, `logistic-LR`, `logistic-BF`")
+        error("method must be one of: `chow`, `logistic-LR`, `logistic-SF`")
     end
     S = collect(S)
     S = unique(S)
@@ -168,9 +168,9 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
                 # target is the last column of df
                 rej, p_value, conf_intervals = conditional_inv_test_logistic(df, target, _S_vec, env, n_env, α=α,
                                                                              add_intercept=true, method="logistic-LR")
-            elseif method == "logistic-BF"
+            elseif method == "logistic-SF"
                 rej, p_value, conf_intervals = conditional_inv_test_logistic(df, target, _S_vec, env, n_env, α=α,
-                                                                             add_intercept=true, method="logistic-BF")
+                                                                             add_intercept=true, method="logistic-SF")
             end
             base_sets[_S] = -p_value  
             if !rej

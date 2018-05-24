@@ -21,6 +21,6 @@ end
     env = repeat([1,2], inner=8)
     r1 = causalSearch(df, :y, env, method="logistic-LR", iterate_all=true)
     @test length(r1.S) == 0
-    r2 = causalSearch(df, :y, env, method="logistic-BF", iterate_all=true)
+    r2 = causalSearch(df, :y, env, method="logistic-SF", iterate_all=true)
     @test length(r2.S) == 0
 end

@@ -116,7 +116,7 @@ The model is logistic regression specified by `fmla`.
 * `add_intercept`:     add `+ 1` or not in formula
 * `method`:            
     + `logistic-LR`: likelihood ratio test
-    + `logistic-BF`: test equal mean and variance of prediction errors with Bahadur-Fisher
+    + `logistic-SF`: test equal mean and variance of prediction errors with Sukhatme-Fisher
 
 Return: `rej`, `p_value`, `conf_intervals`
 * `rej`: false if invariant
@@ -142,7 +142,7 @@ function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{
             # log likelihood ratio = 2 log (p(bigger model) / p(smaller model)) 
             lr = 2 * (loglikelihood(fit1) + loglikelihood(fit2) - loglikelihood(fit0))
             p_values[i] = 1 - cdf(Chisq(p), lr)
-        elseif method == "logistic-BF"
+        elseif method == "logistic-SF"
             # predict and test equal mean of residuals
             if p > 1
                 p_hat = predict(fit0, df)
@@ -150,7 +150,7 @@ function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{
                 p_hat = predict(fit0)
             end
             res = df[target] - p_hat   # TODO: better test
-            p_values[i] = bahadur_fisher_test(res[env.==i], res[env.!=i])
+            p_values[i] = sukhatme_fisher_test(res[env.==i], res[env.!=i])
         else
             error("method undefined")
         end
@@ -201,16 +201,16 @@ function get_formula(df::DataFrame, target::Symbol, S=setdiff(names(df), [target
 end
 
 """
-    bahadur_fisher_test(x, y)
+    sukhatme_fisher_test(x, y)
 
-Bahadur-Fisher test of H0: vectors x and y are two independent normal samples with equal mean and variance
+Sukhatme-Fisher test of H0: vectors x and y are two independent normal samples with equal mean and variance
 
 See Perng, S. K., and Ramon C. Littell. "A test of equality of two normal population means and variances."
     Journal of the American Statistical Association 71.356 (1976): 968-971.
 
 Return: p-value
 """
-function bahadur_fisher_test(x::Vector{Float64}, y::Vector{Float64})
+function sukhatme_fisher_test(x::Vector{Float64}, y::Vector{Float64})
     m = length(x)
     n = length(y)
     ss1 = var(x) * (m - 1)

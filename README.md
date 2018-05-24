@@ -162,7 +162,7 @@ variable   	 1.0 % 		 99.0 %
 - Methods
   - `method="chow"`: Chow test for linear regression
   - `method="logistic-LR"`: likelihood-ratio test for logistic regression
-  - `method="logistic-BF"`: Bahadur-Fisher test for testing equal mean and variance of logistic prediction residuals
+  - `method="logistic-SF"`: [Sukhatme-Fisher test](http://www.jstor.org/stable/2286870) for testing equal mean and variance of logistic prediction residuals
 - SEM utilities: `random_gaussian_SEM`, `random_noise_intervened_SEM`, `simulate`, `causes` and `cov` for generating random SEM (Erdos-Renyi), simulation and interventions.
 - Variables screening:
   - Lasso (with `glmnet`): `screen_lasso(X, y, pmax)`
