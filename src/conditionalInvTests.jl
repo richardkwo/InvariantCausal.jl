@@ -116,7 +116,7 @@ The model is logistic regression specified by `fmla`.
 * `add_intercept`:     add `+ 1` or not in formula
 * `method`:            
     + `logistic-LR`: likelihood ratio test
-    + `logistic-t`:  t test
+    + `logistic-BF`: test equal mean and variance of prediction errors with Bahadur-Fisher
 
 Return: `rej`, `p_value`, `conf_intervals`
 * `rej`: false if invariant
@@ -142,26 +142,19 @@ function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{
             # log likelihood ratio = 2 log (p(bigger model) / p(smaller model)) 
             lr = 2 * (loglikelihood(fit1) + loglikelihood(fit2) - loglikelihood(fit0))
             p_values[i] = 1 - cdf(Chisq(p), lr)
-        elseif method == "logistic-t"
+        elseif method == "logistic-BF"
             # predict and test equal mean of residuals
             if p > 1
-                res = df[target] - predict(fit0, df)
+                p_hat = predict(fit0, df)
             else
-                res = df[target] - predict(fit0)
+                p_hat = predict(fit0)
             end
-            res1 = res[env.==i]
-            res2 = res[env.!=i]
-            n1 = length(res1)
-            n2 = length(res2)
-            v1 = var(res1, corrected=false)
-            v2 = var(res2, corrected=false)
-            t = (mean(res1) - mean(res2)) / sqrt(v1 / n1 + v2 / n2)
-            ν = (v1 / n1 + v2 / n2)^2 / (v1^2 / (n1^2 * (n1 - 1)) + v2^2 / (n2^2 * (n2 - 1)))
-            p_values[i] = 2 * (1 - cdf(TDist(ν), abs(t)))
+            res = df[target] - p_hat   # TODO: better test
+            p_values[i] = bahadur_fisher_test(res[env.==i], res[env.!=i])
         else
             error("method undefined")
         end
-        if p_values[i] < min(α / n_env)
+        if p_values[i] < α / n_env
             break   # early termination
         end
     end
@@ -207,3 +200,33 @@ function get_formula(df::DataFrame, target::Symbol, S=setdiff(names(df), [target
     end
 end
 
+"""
+    bahadur_fisher_test(x, y)
+
+Bahadur-Fisher test of H0: vectors x and y are two independent normal samples with equal mean and variance
+
+See Perng, S. K., and Ramon C. Littell. "A test of equality of two normal population means and variances."
+    Journal of the American Statistical Association 71.356 (1976): 968-971.
+
+Return: p-value
+"""
+function bahadur_fisher_test(x::Vector{Float64}, y::Vector{Float64})
+    m = length(x)
+    n = length(y)
+    ss1 = var(x) * (m - 1)
+    ss2 = var(y) * (n - 1)
+    T = (mean(y) - mean(x)) / sqrt((m + n) * (ss1 + ss2) / ((m + n - 2) * (m * n)))
+    F = (ss2 * (m-1)) / (ss1 * (n-1))
+    g = FDist(n-1, m-1)
+    if F >= median(g)
+        H = 2 * (1 - cdf(g, F))
+    else
+        H = 2 * cdf(g, F)
+    end 
+    W = - 2 * log(H)
+    t = TDist(m + n - 2)
+    w = Chisq(2)
+    Q = - 2 * log(2 * (1 - cdf(t, abs(T)))) - 2 * log(1 - cdf(w, W))
+    q = Chisq(4)
+    return 1 - cdf(q, Q)
+end
