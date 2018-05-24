@@ -2,13 +2,15 @@
 
 [![Build Status](https://travis-ci.org/richardkwo/InvariantCausal.svg?branch=master)](https://travis-ci.org/richardkwo/InvariantCausal) [![Coverage Status](https://coveralls.io/repos/github/richardkwo/InvariantCausal/badge.svg?branch=master)](https://coveralls.io/github/richardkwo/InvariantCausal?branch=master)
 
+![college](docs/college.png)
+
 This is a Julia v.0.6 implementation for the Invariant Causal Prediction algorithm of [Peters, Bühlmann and Meinshausen](https://doi.org/10.1111/rssb.12167). The method uncovers direct causes of a target variable from datasets under different environments (e.g., interventions or experimental settings). 
 
 See also this [R package](https://cran.r-project.org/package=InvariantCausalPrediction).
 
 #### Dependencies
 
-[DataStructures.jl](https://github.com/JuliaCollections/DataStructures.jl), [StatsBase.jl](https://github.com/JuliaStats/StatsBase.jl), [GLMNet.jl](https://github.com/JuliaStats/GLMNet.jl) (for lasso screening and requires `gfortran`) and [UnicodePlots.jl](https://github.com/Evizero/UnicodePlots.jl).
+[DataStructures.jl](https://github.com/JuliaCollections/DataStructures.jl), [StatsBase.jl](https://github.com/JuliaStats/StatsBase.jl), [GLM.jl](https://github.com/JuliaStats/GLM.jl), [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl), [GLMNet.jl](https://github.com/JuliaStats/GLMNet.jl) (for lasso screening and requires `gfortran`) and [UnicodePlots.jl](https://github.com/Evizero/UnicodePlots.jl).
 
 ### Installation
 
@@ -154,11 +156,13 @@ variable   	 1.0 % 		 99.0 %
 ### Functionalities
 
 - The main algorithm `causalSearch(X, y, env, [S]; α=0.01, method="chow", p_max=8, verbose=true, selection_only=false, n_max_for_exact=5000)` 
-  - Testing all subsets by combined [Chow test](https://www.wikiwand.com/en/Chow_test) 
   - Performs lasso screening if number of covariates exceeds `p_max`
   - Skips supersets of an accepted set under `selection_only = true`, but confidence intervals are not reported
   - When sample size exceeds `n_max_for_exact`, sub-sampling is used for Chow test
-- `testConditionalIndep(X, y, S, env, n_env:; α=0.01, method="chow")` and `two_sample_chow(X1, X2, y1, y2)` for testing conditional invariance.
+- Methods
+  - `method="chow"`: Chow test for linear regression
+  - `method="logistic-LR"`: likelihood-ratio test for logistic regression
+  - `method="logistic-BF"`: Bahadur-Fisher test for testing equal mean and variance of logistic prediction residuals
 - SEM utilities: `random_gaussian_SEM`, `random_noise_intervened_SEM`, `simulate`, `causes` and `cov` for generating random SEM (Erdos-Renyi), simulation and interventions.
 - Variables screening:
   - Lasso (with `glmnet`): `screen_lasso(X, y, pmax)`
@@ -173,6 +177,7 @@ variable   	 1.0 % 		 99.0 %
 ### Todo
 
 - ~~Confidence intervals~~
+- ~~Logistic regression~~
 - ~~Variable screening~~
   - ~~glmnet~~
   - HOLP

@@ -91,6 +91,7 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
                       α=0.01, method="chow", verbose=true, p_max=8,
                       selection_only=false, iterate_all=false,
                       n_max_for_exact=5000, max_num_true_causes=Inf)
+    @assert size(X, 1) == length(y) == length(env)
     if method=="chow"
         model = "linear"
         if isa(X, DataFrame)
@@ -100,7 +101,7 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
         model = "logistic"
         # combine into a DataFrame (note: GLM.jl has to work with DataFrame)
         @assert all((y.==1) .| (y.==0))
-        df = DataFrame(hcat(X, y))
+        df = DataFrame(hcat(X, y, makeunique=true))
         for _col in names(df)
             if isa(df[_col], CategoricalArray)
                 @assert length(unique(df[_col])) == 2 "categorical variable $_col should be recoded to binary"
