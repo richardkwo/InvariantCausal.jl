@@ -7,22 +7,23 @@ struct CausalSearchResult
     confint                         ::Matrix{Float64}
     trace_confint_min               ::Matrix{Float64}
     trace_confint_max               ::Matrix{Float64}
+    trace_p_values                  ::Vector{Float64}
     α                               ::Float64
     p                               ::Int64
     variables_considered            ::Union{Vector{Int64}, Vector{Symbol}}
     selection_only                  ::Bool
     model_reject                    ::Bool
-    function CausalSearchResult(S, confint, trace_confint_min, trace_confint_max, α, p, variables_considered; selection_only=false)
-        new(collect(S), confint, trace_confint_min, trace_confint_max, α, p, variables_considered, selection_only, false)
+    function CausalSearchResult(S, confint, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only=false)
+        new(collect(S), confint, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered, selection_only, false)
     end
-    function CausalSearchResult(S, trace_confint_min, trace_confint_max, α, p, variables_considered; selection_only=true)
+    function CausalSearchResult(S, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only=true)
         confint = Matrix{Float64}(length(S), 2)
         confint[:, 1] = -Inf
         confint[:, 2] = Inf
-        new(collect(S), confint, trace_confint_min, trace_confint_max, α, p, variables_considered, selection_only, false)
+        new(collect(S), confint, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered, selection_only, false)
     end
-    function CausalSearchResult(trace_confint_min, trace_confint_max, α, p, variables_considered; selection_only=true)
-        new(Vector{Int64}(), Matrix{Float64}(0, 2), trace_confint_min, trace_confint_max, α, p, variables_considered, selection_only, true)
+    function CausalSearchResult(trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only=true)
+        new(Vector{Int64}(), Matrix{Float64}(0, 2), trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered, selection_only, true)
     end
 end
 
@@ -137,6 +138,7 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
     running_confintervals[:, 2] = -Inf
     _trace_confint_max = Vector{Vector{Float64}}()
     _trace_confint_min = Vector{Vector{Float64}}()
+    trace_p_values = Vector{Float64}()
     n_env = maximum(env)
     if method=="chow"
         for i in 1:n_env
@@ -172,7 +174,8 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
                 rej, p_value, conf_intervals = conditional_inv_test_logistic(df, target, _S_vec, env, n_env, α=α,
                                                                              add_intercept=true, method="logistic-SF")
             end
-            base_sets[_S] = -p_value  
+            base_sets[_S] = -p_value
+            push!(trace_p_values, p_value)
             if !rej
                 # _S is an invariant set
                 accepted_sets[_S_vec] = p_value
@@ -224,11 +227,11 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
     trace_confint_max = hcat(_trace_confint_max...)'
     if isempty(accepted_sets)
         # model rejected
-        return CausalSearchResult(trace_confint_min, trace_confint_max, α, p, variables_considered; selection_only = selection_only)
+        return CausalSearchResult(trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only = selection_only)
     elseif selection_only
-        return CausalSearchResult(running_intersection, trace_confint_min, trace_confint_max, α, p, variables_considered; selection_only = true)
+        return CausalSearchResult(running_intersection, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only = true)
     else
-        return CausalSearchResult(running_intersection, running_confintervals, trace_confint_min, trace_confint_max, α, p, variables_considered; selection_only = false)
+        return CausalSearchResult(running_intersection, running_confintervals, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only = false)
     end
 end
 

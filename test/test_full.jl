@@ -2,6 +2,7 @@ using InvariantCausal
 using Base.Test
 using StatsBase.sample
 
+include(joinpath(@__DIR__, "test_search.jl"))
 include(joinpath(@__DIR__, "test_regression.jl"))
 
 X = readdlm(joinpath(@__DIR__, "X1.dat"))
