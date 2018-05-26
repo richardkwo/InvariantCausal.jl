@@ -46,6 +46,6 @@ function screen_HOLP(X::Matrix{Float64}, y::Vector{Float64}, pmax::Int64)
     _X = X .- mean(X, 1)
     _X = _X ./ std(_X, 1)
     _y = y - mean(y)
-    β = _X' * ((_X * _X') \ _y)
+    β = _X' * ((_X * _X' + 10 * eye(n)) \ _y)
     return sortperm(abs.(β), rev=true)[1:pmax]
 end
