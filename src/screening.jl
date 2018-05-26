@@ -29,3 +29,23 @@ function screen_lasso(X::Matrix{Float64}, y::Vector{Float64}, pmax::Int64)
     end
     return sort(collect(S))
 end
+
+"""
+    screen_HOLP(X, y, pmax)
+
+Screen out `pmax` variables with HOLP projection. 
+
+See: Wang, Xiangyu, and Chenlei Leng. "High dimensional ordinary least squares projection for screening variables." 
+     Journal of the Royal Statistical Society: Series B (Statistical Methodology) 78.3 (2016): 589-611.
+
+"""
+function screen_HOLP(X::Matrix{Float64}, y::Vector{Float64}, pmax::Int64)
+    n, p = size(X)
+    @assert p >= n
+    @assert pmax < p
+    _X = X .- mean(X, 1)
+    _X = _X ./ std(_X, 1)
+    _y = y - mean(y)
+    β = _X' * ((_X * _X') \ _y)
+    return sortperm(abs.(β), rev=true)[1:pmax]
+end

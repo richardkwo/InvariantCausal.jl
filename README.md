@@ -155,8 +155,11 @@ variable   	 1.0 % 		 99.0 %
 
 ### Functionalities
 
-- The main algorithm `causalSearch(X, y, env, [S]; α=0.01, method="chow", p_max=8, verbose=true, selection_only=false, n_max_for_exact=5000)` 
-  - Performs lasso screening if number of covariates exceeds `p_max`
+- The main algorithm `causalSearch(X, y, env, [S]; α=0.01, method="chow", screen="auto", p_max=8, verbose=true, selection_only=false, n_max_for_exact=5000)` 
+  - Performs screening if number of covariates exceeds `p_max`
+    - `screen="auto"`: `"HOLP"` when p > n, `"lasso"` otherwise
+    - `screen="HOLP"`: [High dimensional ordinary least squares projection for screening variables](https://doi.org/10.1111/rssb.12127) when p ≧ n
+    - `screen="lasso"`: lasso solution path from `glmnet`
   - Skips supersets of an accepted set under `selection_only = true`, but confidence intervals are not reported
   - When sample size exceeds `n_max_for_exact`, sub-sampling is used for Chow test
 - Methods
@@ -180,8 +183,7 @@ variable   	 1.0 % 		 99.0 %
 - ~~Logistic regression~~
 - ~~Variable screening~~
   - ~~glmnet~~
-  - HOLP
-  - Marginal
+  - ~~HOLP~~
 - ~~Subsampling for large n in Chow's test~~
 - Nonparametric two-sample tests
 - Hidden variable case

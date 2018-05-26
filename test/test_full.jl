@@ -171,7 +171,7 @@ end
     setting_configs = Dict(
     "n_int" => [100, 200, 300, 400, 500],
     "n_obs" => [100, 200, 300, 400, 500],
-    "p" =>  collect(20:40),
+    "p" =>  collect(20:50),
     "k" => collect(1:3),
     "lb_obs" => collect(0.1:0.1:2),
     "ub_lb_delta_obs" => collect(0.1:0.1:1),

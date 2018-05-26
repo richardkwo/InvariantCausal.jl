@@ -58,7 +58,7 @@ end
 
 """
     causalSearch(X, y, env, [ S=1:size(X,2) ];
-                 α=0.01, method="chow", p_max=8, verbose=true,
+                 α=0.01, method="chow", p_max=8, screen="auto", verbose=true,
                  selection_only=false, iterate_all=false, n_max_for_exact=5000, max_num_true_causes=Inf)
 
     causalSearch(df::DataFrame, target::(Int64 or Symbol), env; ...)
@@ -71,13 +71,17 @@ Searching over subsets in `X[,S]` for direct causes of `y`
 * `env`:               environment indicators (rows of X): 1, 2, ...
 * `S`:                 set of variables (col indices of X) to search, can be a Vector or a Set
 * `α`:                 significance level (e.g. 0.01)
-* `p_max`:             maximum number of variables to consider. 
-                       will use lasso (glmnet) to screen out `p_max` number of variables if `p_max < |S|`.
-                       (set to `Inf` if want no screening)
 * `method`:            
      + `"chow"` for Gaussian linear regression, combined two-sample chow test
      + `"logistic-LR"` for logistic regression (`y` consists of 0 and 1), combined likelihood-ratio test
      + `"logistic-SF"`  for logistic regression (`y` consists of 0 and 1), combined Sukhatme-Fisher test
+* `p_max`:             maximum number of variables to consider. 
+                       will method in `screen` to screen out `p_max` number of variables if `p_max < |S|`.
+                       (set to `Inf` if want no screening)
+* `screen`:
+     + `"lasso"`: with lasso (from glmnet) solution path (see `screen_lasso`)
+     + `"HOLP"`: "High dimensional ordinary least squares projection" method of Wang & Leng, only when p ≧ n (see `screen_HOLP`)
+     + `"auto"`: use `"HOLP"` when p > n, and `"lasso"` otherwise
 * `verbose`:           if true, will print each subset tested
 * `selection_only`:    if true, will prune supersets of an invariant set;
                        but not able to produce valid confidence intervals
@@ -89,7 +93,7 @@ Searching over subsets in `X[,S]` for direct causes of `y`
                         it will skip testing subsets with bigger size than `max_num_true_causes`.
 """
 function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, env::Vector{Int64}, S=1:size(X,2);
-                      α=0.01, method="chow", verbose=true, p_max=8,
+                      α=0.01, method="chow", p_max=8, screen="auto", verbose=true,
                       selection_only=false, iterate_all=false,
                       n_max_for_exact=5000, max_num_true_causes=Inf)
     @assert size(X, 1) == length(y) == length(env)
@@ -118,8 +122,21 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
     if p_max < length(S)
         @assert model=="linear" "screening unsupported for GLM"
         q = length(S)
-        S = S[screen_lasso(X[:, S], y, p_max)]
-        print_with_color(:blue, "$p_max variables are screened out from $q variables with lasso: $S\n")
+        if screen == "auto"
+            if q <= size(X, 1)
+                screen = "lasso"
+            else
+                screen = "HOLP"
+            end
+        end
+        if screen == "lasso"
+            S = S[screen_lasso(X[:, S], y, p_max)]
+        elseif screen == "HOLP"
+            S = S[screen_HOLP(X[:, S], y, p_max)]
+        else
+            error("screen must be one of: `auto`, `lasso`, `HOLP`")
+        end
+        print_with_color(:blue, "$(length(S)) variables are screened out from $q variables with $screen: $S\n")
     end
     variables_considered = S[:]
     if max_num_true_causes < length(S)
@@ -236,7 +253,7 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
 end
 
 function causalSearch(df::DataFrame, target::Union{Int64, Symbol}, env::Vector{Int64};
-                      α=0.01, method="chow", verbose=true, p_max=8,
+                      α=0.01, method="chow", screen="auto", p_max=8, verbose=true,
                       selection_only=false, iterate_all=false,
                       n_max_for_exact=5000, max_num_true_causes=Inf)
     if isa(target, Int64)
@@ -245,7 +262,7 @@ function causalSearch(df::DataFrame, target::Union{Int64, Symbol}, env::Vector{I
     S = setdiff(names(df), [target])
     X = df[:, S]
     y = df[target]
-    causalSearch(X, y, env, S, α=α, method=method, verbose=verbose, p_max=p_max,
+    causalSearch(X, y, env, S, α=α, method=method, screen=screen, p_max=p_max, verbose=verbose,
                  selection_only=selection_only, iterate_all=iterate_all,
                  n_max_for_exact=n_max_for_exact, max_num_true_causes=max_num_true_causes)
 end
