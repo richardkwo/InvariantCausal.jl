@@ -149,7 +149,7 @@ function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{
             else
                 p_hat = predict(fit0)
             end
-            res = df[target] - p_hat   # TODO: better test
+            res = (df[target] - p_hat) ./ sqrt.(p_hat .* (1 - p_hat))
             p_values[i] = sukhatme_fisher_test(res[env.==i], res[env.!=i])
         else
             error("method undefined")
