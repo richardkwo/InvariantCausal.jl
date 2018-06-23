@@ -6,7 +6,7 @@
 
 This is a Julia v.0.6 implementation for the Invariant Causal Prediction algorithm of [Peters, Bühlmann and Meinshausen](https://doi.org/10.1111/rssb.12167). The method uncovers direct causes of a target variable from datasets under different environments (e.g., interventions or experimental settings). 
 
-See also this [R package](https://cran.r-project.org/package=InvariantCausalPrediction).
+See also this [R package](https://cran.r-project.org/package=InvariantCausalPrediction) and [this report](docs/InvariantCausal.pdf).
 
 #### Changelog
 
