@@ -4,13 +4,14 @@
 
 ![college](docs/college.png)
 
-This is a Julia v.0.6 implementation for the Invariant Causal Prediction algorithm of [Peters, Bühlmann and Meinshausen](https://doi.org/10.1111/rssb.12167). The method uncovers direct causes of a target variable from datasets under different environments (e.g., interventions or experimental settings). 
+This is a **Julia 1.x** implementation for the **Invariant Causal Prediction** algorithm of [Peters, Bühlmann and Meinshausen](https://doi.org/10.1111/rssb.12167). The method uncovers direct causes of a target variable from datasets under different environments (e.g., interventions or experimental settings). 
 
 See also this [R package](https://cran.r-project.org/package=InvariantCausalPrediction) and [this report](docs/InvariantCausal.pdf).
 
 #### Changelog
 
-- 2018/06/20: version 0.1.1
+- 2020/12/03: version 1.0.0 (Julia 1.x)
+- 2018/06/20: version 0.1.1 (Julia 0.6)
 
 #### Dependencies
 
@@ -44,67 +45,84 @@ Generate a simple [Gaussian structure equation model](https://en.wikipedia.org/w
 ```julia
 julia> using InvariantCausal
 julia> using Random
-julia> Random.seed!(1926)
+julia> Random.seed!(77)
 julia> sem_obs = random_gaussian_SEM(21, 3)
+
 Gaussian SEM with 21 variables:
 B =
       Sparsity Pattern
       ┌───────────┐
-    1 │⠀⠀⡄⠀⠐⡠⠀⡀⢢⡄⠀│ > 0
-      │⠠⠀⠄⡀⡸⡠⠠⡀⠀⢠⠀│ < 0
-      │⠀⠈⠠⠀⠈⠉⠀⠄⠀⠀⠀│
-      │⠀⢂⠢⠀⢨⢀⠀⡀⢀⠂⡒│
-      │⠀⠀⠀⠀⠠⢲⠀⠄⠀⠀⠐│
-   21 │⠀⠀⠹⠀⠀⠐⠐⠆⠐⠥⠀│
+    1 │⠀⠠⠀⠀⢐⠀⠀⠄⠀⢔⠀│ > 0
+      │⠠⠀⠠⠨⠁⠀⠄⠀⠀⠸⠀│ < 0
+      │⠠⠈⠈⠀⠌⠠⠀⠅⠀⠩⠉│
+      │⠠⣨⠴⠰⠪⠠⠄⠀⠸⠉⣐│
+      │⢀⠲⠈⢠⠠⠀⠀⠂⠀⠲⠁│
+   21 │⠀⠐⠀⠀⠠⠠⠀⠀⠀⠔⠀│
       └───────────┘
       1          21
-        nz = 63σ² = [1.3995969539576336, 1.3797542626927117, 1.8725924411035275, 1.1558670231511754, 0.6313157118985134, 1.3861564933413408, 1.4515091017758692, 1.7392330458711087, 1.55834175481778, 1.1102263218265493, 1.2459898446608833, 0.9582172366364653, 0.8341414371776826, 1.9452530507977812, 1.48880401416046, 1.5359339337413704, 1.691737599591161, 0.6496166911064964, 1.1210005303098285, 1.1459738623697713, 0.6920288559801938]
+        nz = 70σ² = [1.9727697778060356, 1.1224733663047743, 1.1798805640594814, 1.2625825149076064, 0.8503782631176267, 0.5262963446298372, 1.3835334059064883, 1.788996301274282, 1.759286517329432, 0.842571682652995, 1.713382150423666, 1.4524484793202235, 1.9464648511794784, 1.7729995603828317, 0.7110857327642559, 1.6837378902964577, 1.085405687408806, 1.3069888003095986, 1.3933773717634643, 1.0571823834646068, 1.9187793877731028]
 ```
 
-Suppose we want to infer the direct causes for the last variables, which are
+Suppose we want to infer the direct causes for the last variables, i.e., 9, 11 and 18.
 
 ```julia
 julia> causes(sem_obs, 21)
-2-element Array{Int64,1}:
- 2
- 5
+3-element Array{Int64,1}:
+  9
+ 11
+ 18
 ```
 
-Firstly, let us generate some observational data and call it environment 1.
+Firstly, let us generate some observational data and call it **environment 1**.
 
 ```julia
 julia> X1 = simulate(sem_obs, 1000)
 ```
 
-Then, we simulate from environment 2 by performing do-intervention on variables 3, 4, 5, 6. Here we set them to fixed random values.
+Then, we simulate from **environment 2** by performing **do-intervention** on variables 3, 4, 5, 6. Here we set them to fixed random values.
 
 ```julia
 julia> X2 = simulate(sem_obs, [3,4,5,6], randn(4), 1000)
 ```
 
-We run the algorithm on environments 1 and 2.
+We run the algorithm on **environments 1 and 2**.
 
 ```julia
 julia> causalSearch(vcat(X1, X2)[:,1:20], vcat(X1, X2)[:,21], repeat([1,2], inner=1000))
 
-8 variables are screened out from 20 variables with lasso: [2, 5, 6, 8, 13, 15, 16, 20]
-Causal invariance search across 2 environments with at α=0.01 (|S| = 8, method = chow)
+8 variables are screened out from 20 variables with lasso: [5, 7, 8, 9, 11, 12, 15, 17]
+Causal invariance search across 2 environments with at α=0.01 (|S| = 8, method = chow, model = linear)
 
-S = []                                      : p-value = 0.0000 [ ] ⋂ = [2, 5, 6, 8, 13, 15, 16, 20]
-S = [2]                                     : p-value = 0.1376 [*] ⋂ = [2]
-S = [20]                                    : p-value = 0.0000 [ ] ⋂ = [2]
-S = [16]                                    : p-value = 0.0000 [ ] ⋂ = [2]
-S = [15]                                    : p-value = 0.0000 [ ] ⋂ = [2]
-                                     ...
-S = [2, 5, 6]                               : p-value = 0.3557 [*] ⋂ = [2]
-S = [5, 6, 20]                              : p-value = 0.1879 [*] ⋂ = Int64[]
+S = []                                      : p-value = 0.0000 [ ] ⋂ = [5, 7, 8, 9, 11, 12, 15, 17]
+S = [5]                                     : p-value = 0.0000 [ ] ⋂ = [5, 7, 8, 9, 11, 12, 15, 17]
+S = [17]                                    : p-value = 0.0000 [ ] ⋂ = [5, 7, 8, 9, 11, 12, 15, 17]
+S = [15]                                    : p-value = 0.0000 [ ] ⋂ = [5, 7, 8, 9, 11, 12, 15, 17]
+S = [12]                                    : p-value = 0.0000 [ ] ⋂ = [5, 7, 8, 9, 11, 12, 15, 17]
+S = [11]                                    : p-value = 0.0144 [*] ⋂ = [11]
+S = [9]                                     : p-value = 0.0000 [ ] ⋂ = [11]
+S = [8]                                     : p-value = 0.0000 [ ] ⋂ = [11]
+S = [7]                                     : p-value = 0.0000 [ ] ⋂ = [11]
+S = [11, 5]                                 : p-value = 0.0000 [ ] ⋂ = [11]
+S = [11, 12]                                : p-value = 0.0000 [ ] ⋂ = [11]
+S = [11, 15]                                : p-value = 0.0007 [ ] ⋂ = [11]
+S = [7, 11]                                 : p-value = 0.0082 [ ] ⋂ = [11]
+S = [11, 8]                                 : p-value = 0.0000 [ ] ⋂ = [11]
+S = [9, 11]                                 : p-value = 0.0512 [*] ⋂ = [11]
+S = [17, 11]                                : p-value = 0.0000 [ ] ⋂ = [11]
+S = [9, 12]                                 : p-value = 0.0000 [ ] ⋂ = [11]
+S = [9, 15]                                 : p-value = 0.0064 [ ] ⋂ = [11]
+S = [7, 9]                                  : p-value = 0.0000 [ ] ⋂ = [11]
+S = [9, 8]                                  : p-value = 0.0000 [ ] ⋂ = [11]
+S = [9, 5]                                  : p-value = 0.7475 [*] ⋂ = Int64[]
+
+Tested 21 sets: 3 sets are accepted.
 
  * Found no causal variable (empty intersection).
 
- ⋅ Variables considered include [2, 5, 6, 8, 13, 15, 16, 20]
+ ⋅ Variables considered include [5, 7, 8, 9, 11, 12, 15, 17]
 ```
 
-The algorithm cannot find any direct causal variables (parents) of variable 21 due to insufficient power of two environments. The algorithm tends to discover more with more environments. Let us define a new environment where we perform a noise (soft) intervention that changes the equations for 5 variables other than the target. Note it is important that the target is left untouched.
+The algorithm **cannot find any** direct causal variables (parents) of variable 21 due to **insufficient power** of two environments. The algorithm tends to **discover more** with **more environments**. Let us define a new environment where we perform a **noise (soft) intervention** that changes the equations for 5 variables other than the target. Note it is important that the **target** is left **untouched**.
 
 ```Julia
 julia> sem_noise, variables_intervened = random_noise_intervened_SEM(sem_obs, p_intervened=5, avoid=[21])
@@ -112,54 +130,61 @@ julia> sem_noise, variables_intervened = random_noise_intervened_SEM(sem_obs, p_
 (Gaussian SEM with 21 variables:
 B =
       Sparsity Pattern
-      ┌─────────────┐
-    1 │⠀⠀⠂⠄⠀⠔⠀⠀⠂⠂⡆│ > 0
-      │⢀⢠⠈⡀⠠⠠⣀⠀⠀⠅⠀│ < 0
-      │⠀⠐⠉⠀⠈⠠⠘⠀⠀⠆⠉│
-      │⠀⠐⢠⠀⠀⡀⠐⠀⢂⠀⡂│
-      │⠀⠠⢐⠀⠉⠵⠠⠁⠄⠈⠂│
-   21 │⠈⠄⠸⠀⠀⠈⠀⠀⠉⠀⠁│
-      └─────────────┘
+      ┌───────────┐
+    1 │⠀⠠⠀⠀⢐⠀⠀⠄⠀⢔⠀│ > 0
+      │⠠⠀⠠⠨⠁⠀⠄⠀⠀⠸⠀│ < 0
+      │⠠⠈⠈⠀⠌⠠⠀⠅⠀⠩⠉│
+      │⠠⣨⠴⠰⠪⠠⠄⠀⠸⠉⣐│
+      │⢀⠲⠈⢠⠠⠀⠀⠂⠀⠲⠁│
+   21 │⠀⠐⠀⠀⠠⠠⠀⠀⠀⠔⠀│
+      └───────────┘
       1          21
-        nz = 63
-σ² = [1.3996, 1.20882, 1.87259, 1.15587, 0.631316, 1.38616, 1.45151, 1.73923, 2.55396, 1.11023, 1.24599, 0.958217, 0.506628, 1.94525, 2.16212, 1.53593, 1.69174, 0.649617, 1.121, 2.19366, 0.692029], [9, 15, 13, 2, 20])
+        nz = 70σ² = [1.9727697778060356, 1.1224733663047743, 1.1798805640594814, 1.2625825149076064, 0.8503782631176267, 0.5262963446298372, 1.3835334059064883, 1.788996301274282, 1.759286517329432, 0.5837984015051159, 3.01957479564807, 0.9492838187140921, 1.9398913901673531, 1.7729995603828317, 0.7110857327642559, 1.6837378902964577, 1.2089053651343495, 1.3069888003095986, 1.3933773717634643, 1.0571823834646068, 1.9187793877731028], [17, 13, 10, 11, 12])
 ```
 
-Here the equations for variables 9, 15, 13, 2, 20 have been changed. Now we simulate from this modified SEM and call it environment 3. We run the algorithm on all 3 environments.
+Here the equations for variables 17, 13, 10, 11, 12 have been changed. Now we simulate from this modified SEM and call it **environment 3**. We run the algorithm on all **3 environments**.
 
 ```Julia
 julia> X3 = simulate(sem_noise, 1000)
 julia> causalSearch(vcat(X1, X2, X3)[:,1:20], vcat(X1, X2, X3)[:,21], repeat([1,2,3], inner=1000))
 ```
 
-The algorithm searches over subsets for a while and successfully discovers variables 2. 
+The algorithm searches over subsets for a while and successfully **discovers** variables 11. The other two causes, 9 and 18, can hopefully be discovered given even more environments.
 
 ```
-8 variables are screened out from 20 variables with lasso: [1, 2, 5, 6, 8, 13, 15, 20]
-Causal invariance search across 3 environments with at α=0.01 (|S| = 8, method = chow)
+causalSearch(vcat(X1, X2, X3)[:,1:20], vcat(X1, X2, X3)[:,21], repeat([1,2,3], inner=1000))
+8 variables are screened out from 20 variables with lasso: [4, 5, 7, 8, 9, 11, 12, 16]
+Causal invariance search across 3 environments with at α=0.01 (|S| = 8, method = chow, model = linear)
 
-S = []                                      : p-value = 0.0000 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [1]                                     : p-value = 0.0000 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [20]                                    : p-value = 0.0000 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [15]                                    : p-value = 0.0000 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [13]                                    : p-value = 0.0000 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [8]                                     : p-value = 0.0000 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [6]                                     : p-value = 0.0000 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [5]                                     : p-value = 0.0001 [ ] ⋂ = [1, 2, 5, 6, 8, 13, 15, 20]
-S = [2]                                     : p-value = 0.1714 [*] ⋂ = [2]
-S = [5, 1]                                  : p-value = 0.0000 [ ] ⋂ = [2]
-S = [2, 5]                                  : p-value = 0.2211 [*] ⋂ = [2]
-S = [5, 20]                                 : p-value = 0.0000 [ ] ⋂ = [2]
-                                      ...
-S = [1, 13, 2, 5, 8, 15, 6]                 : p-value = 0.4380 [*] ⋂ = [2]
-S = [20, 6, 13, 2, 5, 8, 15, 1]             : p-value = 0.6916 [*] ⋂ = [2]
+S = []                                      : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [4]                                     : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [16]                                    : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [12]                                    : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [11]                                    : p-value = 0.0084 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [9]                                     : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [8]                                     : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [7]                                     : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [5]                                     : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [4, 11]                                 : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [11, 5]                                 : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [11, 8]                                 : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [7, 11]                                 : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [9, 11]                                 : p-value = 0.0000 [ ] ⋂ = [4, 5, 7, 8, 9, 11, 12, 16]
+S = [16, 11]                                : p-value = 0.0709 [*] ⋂ = [11, 16]
+S = [11, 12]                                : p-value = 0.0000 [ ] ⋂ = [11, 16]
+																			...
+S = [7, 9, 4, 16, 11, 5, 12]                : p-value = 0.0000 [ ] ⋂ = [11]
+S = [7, 9, 4, 16, 11, 8, 12]                : p-value = 0.0001 [ ] ⋂ = [11]
+S = [7, 4, 9, 16, 11, 5, 8, 12]             : p-value = 0.0002 [ ] ⋂ = [11]
 
- * Causal variables include: [2]
+Tested 256 sets: 6 sets are accepted.
 
-variable   	 1.0 % 		 99.0 %
-2          	 0.5831 	 0.7054
+ * Causal variables include: [11]
 
- ⋅ Variables considered include [1, 2, 5, 6, 8, 13, 15, 20]
+   variable   	 1.0 % 		 99.0 %
+   11         	 0.1123 	 1.1017
+
+ ⋅ Variables considered include [4, 5, 7, 8, 9, 11, 12, 16]
 ```
 
 ### Functionalities
@@ -181,24 +206,8 @@ variable   	 1.0 % 		 99.0 %
 
 ###  Features
 
-- High performance implementation in Julia v.0.6
+- High performance implementation in Julia v1.x
 - Faster search: 
   - skipping testing supersets of A if A is accepted ( under  `selection_only` mode)
   - Priority queue to prioritize testing sets likely to be invariant
-
-### Todo
-
-- ~~Confidence intervals~~
-- ~~Logistic regression~~
-- ~~Variable screening~~
-  - ~~glmnet~~
-  - ~~HOLP~~
-- ~~Subsampling for large n in Chow's test~~
-- Nonparametric two-sample tests
-- Hidden variable case
-- ~~Inference of graph and plotting~~
-
-### Issues
-
-- ~~Better reporting~~
 

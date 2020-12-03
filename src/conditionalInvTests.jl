@@ -179,9 +179,10 @@ function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{
     return reject, p_value, conf_intervals
 end
 
-function conditional_inv_test_logistic_LR(df::DataFrame, target::Symbol, S::Vector{Int64},
-                                            env::Vector{Int64}, n_env::Int64; α=0.01, add_intercept=true)
-    conditional_inv_test_logistic_LR(df, target, names(df)[S], env, n_env; α=α, add_intercept=add_intercept)                                            
+function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{Int64},
+    env::Vector{Int64}, n_env::Int64; α=0.01, add_intercept=true, method="logistic-LR")
+    conditional_inv_test_logistic(df, target, propertynames(df)[S], env, n_env; 
+        α=α, add_intercept=add_intercept, method=method)                                            
 end
 
 """

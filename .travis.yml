@@ -1,41 +1,23 @@
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
-
-fast_finish: true
-
-group: travis_latest
-
 os:
   - linux
   - osx
-
-addons:
-  apt:
-    packages: ['gfortran','liblapack-dev','libopenmpi-dev']
-
 julia:
-  - 0.6
+  - 1.5
+  - 1.1
   - nightly
-
 notifications:
   email: false
-
 git:
-  depth: 99999
+  depth: 99999999
 
-before_install:
-  - if [[ $TRAVIS_OS_NAME == osx ]]; then
-      brew update > /dev/null;
-      brew install gcc || true;
-      brew link --overwrite gcc;
-      brew install lapack open-mpi > /dev/null;
-      export FC=gfortran;
-    fi
-
-# (tests will run but not make your overall status red)
+## uncomment the following lines to allow failures on nightly julia
+## (tests will run but not make your overall status red)
 matrix:
- allow_failures:
- - julia: nightly
+  allow_failures:
+    - julia: nightly
+
 
 after_success:
-- julia -e 'cd(Pkg.dir("InvariantCausal")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder())'

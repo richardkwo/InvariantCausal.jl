@@ -20,8 +20,13 @@ end
                 x3 = [0.0  0.0  1.0  1.0  0.0  0.0  1.0  0.0  0.0  0.0  1.0  1.0  0.0  0.0  1.0  0.0][:],
                 y =  [1.0  1.0  1.0  0.0  0.0  1.0  1.0  1.0  0.0  1.0  1.0  0.0  0.0  1.0  1.0  0.0][:])
     env = repeat([1,2], inner=8)
+    X = Matrix{Float64}(df[!, 1:3])
     r1 = causalSearch(df, :y, env, method="logistic-LR", iterate_all=true)
     @test length(r1.S) == 0
+    r1 = causalSearch(X, df.y, env, method="logistic-LR", iterate_all=true)
+    @test length(r1.S) == 0
     r2 = causalSearch(df, :y, env, method="logistic-SF", iterate_all=true)
+    @test length(r2.S) == 0
+    r2 = causalSearch(X, df.y, env, method="logistic-SF", iterate_all=true)
     @test length(r2.S) == 0
 end

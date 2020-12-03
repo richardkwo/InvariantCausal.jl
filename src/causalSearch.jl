@@ -106,7 +106,7 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
         model = "logistic"
         # combine into a DataFrame (note: GLM.jl has to work with DataFrame)
         @assert all((y.==1) .| (y.==0))
-        df = DataFrame(hcat(X, y, makeunique=true))
+        df = DataFrame(isa(X, DataFrame) ? hcat(X, y, makeunique=true) : hcat(X, y))
         for _col in propertynames(df)
             if isa(df[!, _col], CategoricalArray)
                 @assert length(unique(df[!, _col])) == 2 "categorical variable $_col should be recoded to binary"
