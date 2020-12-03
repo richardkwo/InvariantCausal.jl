@@ -1,3 +1,4 @@
+using Printf
 using GLMNet: glmnet
 
 """
@@ -10,11 +11,11 @@ function screen_lasso(X::Matrix{Float64}, y::Vector{Float64}, pmax::Int64)
     p = size(X, 2)
     @assert pmax <= p
     betas = fit.betas
-    n_vars = sum(betas.!=0, 1)[:]
+    n_vars = sum(betas.!=0, dims=1)[:]
     S = Set{Int64}()
     for n in unique(n_vars)
         Z = betas[:, n_vars.==n]
-        non_zeros = sum(Z.!=0, 2)[:]
+        non_zeros = sum(Z.!=0, dims=2)[:]
         vars = (1:p)[non_zeros .> 0]
         new_vars = setdiff(vars, S)
         Z = Z[new_vars, :]

@@ -1,5 +1,5 @@
 using DataStructures: PriorityQueue, enqueue!, dequeue_pair!
-using DataFrames: DataFrame
+using DataFrames: DataFrame, columnindex
 using CategoricalArrays: CategoricalArray
 
 struct CausalSearchResult
@@ -17,26 +17,26 @@ struct CausalSearchResult
         new(collect(S), confint, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered, selection_only, false)
     end
     function CausalSearchResult(S, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only=true)
-        confint = Matrix{Float64}(length(S), 2)
-        confint[:, 1] = -Inf
-        confint[:, 2] = Inf
+        confint = Matrix{Float64}(undef, length(S), 2)
+        confint[:, 1] .= -Inf
+        confint[:, 2] .= Inf
         new(collect(S), confint, trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered, selection_only, false)
     end
     function CausalSearchResult(trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered; selection_only=true)
-        new(Vector{Int64}(), Matrix{Float64}(0, 2), trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered, selection_only, true)
+        new(Vector{Int64}(), Matrix{Float64}(undef, 0, 2), trace_confint_min, trace_confint_max, trace_p_values, α, p, variables_considered, selection_only, true)
     end
 end
 
 function Base.show(io::IO, result::CausalSearchResult)
     if result.model_reject
-        print_with_color(:light_magenta, "\n * The whole model is rejected! i.e., Y | (all variables) is not invariant.\n", bold=true)
+        printstyled("\n * The whole model is rejected! i.e., Y | (all variables) is not invariant.\n", color=:light_magenta, bold=true)
     elseif isempty(result.S)
         # no causal variable found
-        print_with_color(:light_magenta, "\n * Found no causal variable (empty intersection).\n", bold=true)
+        printstyled("\n * Found no causal variable (empty intersection).\n", color=:light_magenta, bold=true)
     else
-        print_with_color(:green, "\n * Causal variables include: $(result.S)\n", bold=true)
+        printstyled("\n * Causal variables include: $(result.S)\n", color=:green, bold=true)
         if result.selection_only
-            print_with_color(:light_blue, " * No confidence intervals produced in selection_only mode\n")
+            printstyled(" * No confidence intervals produced in selection_only mode\n", color=:light_blue)
         else
             println(@sprintf("\n   %-10s \t %-3s %% \t\t %-3s %%", "variable", result.α * 100, (1 - result.α) * 100))
             for i in result.S
@@ -107,12 +107,12 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
         # combine into a DataFrame (note: GLM.jl has to work with DataFrame)
         @assert all((y.==1) .| (y.==0))
         df = DataFrame(hcat(X, y, makeunique=true))
-        for _col in names(df)
-            if isa(df[_col], CategoricalArray)
-                @assert length(unique(df[_col])) == 2 "categorical variable $_col should be recoded to binary"
+        for _col in propertynames(df)
+            if isa(df[!, _col], CategoricalArray)
+                @assert length(unique(df[!, _col])) == 2 "categorical variable $_col should be recoded to binary"
             end
         end
-        target = names(df)[end]  # target is the last column
+        target = propertynames(df)[end]  # target is the last column
     else
         error("method must be one of: `chow`, `logistic-LR`, `logistic-SF`")
     end
@@ -136,11 +136,11 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
         else
             error("screen must be one of: `auto`, `lasso`, `HOLP`")
         end
-        print_with_color(:blue, "$(length(S)) variables are screened out from $q variables with $screen: $S\n")
+        printstyled("$(length(S)) variables are screened out from $q variables with $screen: $S\n", color=:blue)
     end
     variables_considered = S[:]
     if max_num_true_causes < length(S)
-        print_with_color(:blue, "the size of |S| is restricted to ≦ $max_num_true_causes \n")
+        printstyled("the size of |S| is restricted to ≦ $max_num_true_causes \n", color=:blue)
     else
         max_num_true_causes = length(S)
     end
@@ -151,25 +151,25 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
     n_tested_sets = 0
     running_intersection = S
     running_confintervals = zeros(p, 2)
-    running_confintervals[:, 1] = Inf
-    running_confintervals[:, 2] = -Inf
+    running_confintervals[:, 1] .= Inf
+    running_confintervals[:, 2] .= -Inf
     _trace_confint_max = Vector{Vector{Float64}}()
     _trace_confint_min = Vector{Vector{Float64}}()
     trace_p_values = Vector{Float64}()
     n_env = maximum(env)
-    if method=="chow"
+    if method == "chow"
         for i in 1:n_env
             ni = sum(env.==i)
             if ni > n_max_for_exact
-                print_with_color(:blue, @sprintf "environment %d has %d obs, subsample of %d is used\n" i ni n_max_for_exact)
+                printstyled(@sprintf("environment %d has %d obs, subsample of %d is used\n", i, ni, n_max_for_exact), color=:blue)
             end
         end
     end
     println(@sprintf "Causal invariance search across %d environments with at α=%s (|S| = %d, method = %s, model = %s)\n" n_env α length(S) method model)    
-    max_num_true_causes < length(S) && print_with_color(:blue, "|S| is restricted to subsets with size ≦ $max_num_true_causes.\n")
+    max_num_true_causes < length(S) && printstyled("|S| is restricted to subsets with size ≦ $max_num_true_causes.\n", color=:blue)
     # priority queue: S -> -p.value (so sets with higher p-values are tested sooner)
     candidate_sets = PriorityQueue{Union{Set{Int64}, Set{Symbol}}, Float64}()
-    enqueue!(candidate_sets, Set{typeof(S[1])}(), 0.)
+    enqueue!(candidate_sets, Set{typeof(S[1])}()=>0.)
     size_current_set = 0    
     while size_current_set <= max_num_true_causes
         base_sets = Dict{Union{Set{Int64}, Set{Symbol}}, Float64}()  # set -> (-p_value) 
@@ -199,11 +199,11 @@ function causalSearch(X::Union{Matrix{Float64}, DataFrame}, y::Vector{Float64}, 
                 # running ∩
                 running_intersection = intersect(running_intersection, _S_vec)
                 # running ∪
-                conf_intervals_padded = zeros(running_confintervals)  # unincluded variables have [0,0] as confint
+                conf_intervals_padded = zeros(size(running_confintervals))  # unincluded variables have [0,0] as confint
                 if isa(_S_vec, Vector{Int64})
                     conf_intervals_padded[_S_vec, :] = conf_intervals
                 else
-                    _idx_vec = [df.colindex[z] for z in _S_vec]
+                    _idx_vec = [columnindex(df, z) for z in _S_vec]
                     conf_intervals_padded[_idx_vec, :] = conf_intervals
                 end
                 running_confintervals[:, 1] = min.(running_confintervals[:, 1], conf_intervals_padded[:, 1])
@@ -257,11 +257,11 @@ function causalSearch(df::DataFrame, target::Union{Int64, Symbol}, env::Vector{I
                       selection_only=false, iterate_all=false,
                       n_max_for_exact=5000, max_num_true_causes=Inf)
     if isa(target, Int64)
-        target = names(df)[target]
+        target = propertynames(df)[target]
     end
-    S = setdiff(names(df), [target])
+    S = setdiff(propertynames(df), [target])
     X = df[:, S]
-    y = df[target]
+    y = df[!, target]
     causalSearch(X, y, env, S, α=α, method=method, screen=screen, p_max=p_max, verbose=verbose,
                  selection_only=selection_only, iterate_all=iterate_all,
                  n_max_for_exact=n_max_for_exact, max_num_true_causes=max_num_true_causes)

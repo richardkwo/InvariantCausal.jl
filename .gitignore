@@ -6,6 +6,8 @@
 *.jl.*.cov
 *.jl.mem
 deps/deps.jl
+.vscode
+notebooks
 
 ### macOS ###
 *.DS_Store

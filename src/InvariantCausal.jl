@@ -2,6 +2,10 @@ __precompile__()
 
 module InvariantCausal
 
+    using Printf
+    using LinearAlgebra
+    import Statistics: var, cov, quantile, mean, median
+
     export causalSearch, screen_lasso, screen_HOLP, two_sample_chow, sukhatme_fisher_test, conditional_inv_test_chow, conditional_inv_test_logistic,
            GaussianSEM, simulate, causes, cov, random_gaussian_SEM, random_noise_intervened_SEM
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env julia
-Pkg.test("GLMNet")   # force it to compile the dep
 using InvariantCausal
-using Base.Test
+using Test
 println("Starting tests")
 @time begin
 include("test_regression.jl") 

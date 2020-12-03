@@ -1,7 +1,7 @@
 using Distributions: cdf, FDist, TDist, Chisq, Bernoulli
 using StatsBase: sample
 using DataFrames: DataFrame
-using StatsModels: @formula, Formula
+using StatsModels: @formula
 using GLM: glm, loglikelihood, coef, confint, predict
 
 """
@@ -87,7 +87,7 @@ function two_sample_chow(X1::Matrix{Float64}, X2::Matrix{Float64},
     try
         β = (X1' * X1) \ (X1' * y1)
     catch _err
-        print_with_color(:light_red, "encountered $_err in least square for Chow's test\n")
+        printstyled("encountered $_err in least square for Chow's test\n", color=:light_red)
         return 0.
     end
     res2 = y2 - X2 * β
@@ -149,7 +149,7 @@ function conditional_inv_test_logistic(df::DataFrame, target::Symbol, S::Vector{
             else
                 p_hat = predict(fit0)
             end
-            res = (df[target] - p_hat) ./ sqrt.(p_hat .* (1 - p_hat))
+            res = (df[!, target] - p_hat) ./ sqrt.(p_hat .* (1 .- p_hat))
             p_values[i] = sukhatme_fisher_test(res[env.==i], res[env.!=i])
         else
             error("method undefined")
