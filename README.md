@@ -22,13 +22,14 @@ See also this [R package](https://cran.r-project.org/package=InvariantCausalPred
 Install the package via typing the following in Julia REPL.
 
 ```julia
+julia> using Pkg
 julia> Pkg.add("InvariantCausal")
 ```
 
 Alternatively, you can install the latest from GitHub.
 
 ```Julia
-julia> Pkg.clone("https://github.com/richardkwo/InvariantCausal.git")
+julia> Pkg.add(url="https://github.com/richardkwo/InvariantCausal.git")
 ```
 
 Use the following to run a full test.
