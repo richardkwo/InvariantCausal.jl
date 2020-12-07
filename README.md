@@ -1,6 +1,6 @@
 ## Causal Inference with Invariant Prediction
 
-[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) [![Build Status](https://travis-ci.org/richardkwo/InvariantCausal.jl.svg?branch=master)](https://travis-ci.org/github/richardkwo/InvariantCausal.jl) [![Coverage Status](https://coveralls.io/repos/github/richardkwo/InvariantCausal.jl/badge.svg?branch=master)](https://coveralls.io/github/richardkwo/InvariantCausal.jl?branch=master)
+[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) [![Build Status](https://travis-ci.org/richardkwo/InvariantCausal.jl.svg?branch=master)](https://travis-ci.org/github/richardkwo/InvariantCausal.jl) [![codecov](https://codecov.io/gh/richardkwo/InvariantCausal.jl/branch/master/graph/badge.svg?token=GAKgUhTT6E)](https://codecov.io/gh/richardkwo/InvariantCausal.jl)
 
 ![college](docs/college.png)
 
